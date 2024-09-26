@@ -5,27 +5,18 @@ import { conversations } from "~/utils";
 const genAI = new GoogleGenerativeAI(process.env.GEMEINI_KEY);
 
 export default defineEventHandler(async (event) => {
-  let { message, token } = await readBody(event);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  let { message } = await readBody(event);
+  const chatId = getRouterParam(event, 'chatId')
 
-  if (!token) token = uuidv4();
-  if (!conversations[token]) {
-    conversations[token] = await model.startChat({
-      generationConfig: {
-        maxOutputTokens: 100
-      }
-    });
-  }
+  const result = await conversations[chatId].sendMessage(message);
 
-  const result = await conversations[token].sendMessage(message);
-  const response = await result.response;
-  const text = response.text();
+  console.log("conversations[chatId].ChatSession", conversations[chatId]._history)
 
   return {
     status: 200,
     body: {
-      text,
-      token
+      history: conversations[chatId]._history,
+      chatId,
     }
   };
 });
